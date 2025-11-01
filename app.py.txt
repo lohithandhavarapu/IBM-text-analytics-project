@@ -1,0 +1,40 @@
+import gradio as gr
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+from skimage import exposure
+from transformers import pipeline
+
+# Hugging Face NLP model
+hf_nlp = pipeline("sentiment-analysis")
+
+def analyze_ocean(image, text):
+    sentiment = hf_nlp(text)[0]
+    sentiment_result = f"Sentiment: {sentiment['label']} (Score: {sentiment['score']:.4f})"
+
+    img = Image.open(image)
+    img_np = np.array(img)
+    green_channel = img_np[:,:,1].astype(float)
+    chl_map = exposure.equalize_adapthist(green_channel/255.0)
+
+    mean_val = np.nanmean(chl_map)
+    if mean_val > 0.6:
+        productivity = "High Productivity 🌊"
+    elif mean_val > 0.3:
+        productivity = "Moderate Productivity 🌊"
+    else:
+        productivity = "Low Productivity ⚠"
+
+    fig = plt.figure(figsize=(4,4))
+    plt.imshow(chl_map, cmap="viridis")
+    plt.axis('off')
+
+    return fig, f"{productivity} | Mean: {mean_val:.3f}", sentiment_result
+
+interface = gr.Interface(
+    fn=analyze_ocean,
+    inputs=[gr.Image(type="filepath"), gr.Textbox(label="Enter Ocean Research Text")],
+    outputs=[gr.Plot(), "text", "text"],
+    title="🌊 Ocean Productivity & NLP Analyzer"
+)
+interface.launch()

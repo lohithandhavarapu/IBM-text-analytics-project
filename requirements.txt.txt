@@ -1,0 +1,8 @@
+gradio
+transformers
+torch
+sentencepiece
+numpy
+pillow
+scikit-image
+matplotlib
